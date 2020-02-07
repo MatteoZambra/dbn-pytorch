@@ -1,4 +1,3 @@
-
 from dbn import *
 from visual import *
 from rbm import *

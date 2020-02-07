@@ -1,4 +1,3 @@
-
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,6 +17,7 @@ def plot_single_image(image):
     Returns:
         ~ nothing
     """
+    image = image.cpu()
     
     assert type(image) is torch.Tensor, 'Image to plot is not torch.Tensor'
     image_size = int(np.sqrt(image.shape[0]))
@@ -44,6 +44,8 @@ def plot_images_grid(images, labels, title):
     Returns:
         ~ nothing
     """
+    images = images.cpu()
+    labels = labels.cpu()
     
     assert type(images[0]) is torch.Tensor, 'Image to plot is not torch.Tensor'
     image_size = int(np.sqrt(images[0].shape[0]))
@@ -52,7 +54,8 @@ def plot_images_grid(images, labels, title):
     for idx in range(10):
         ax = fig.add_subplot(2,10/2,idx+1, xticks=[], yticks=[])
         ax.imshow(images[idx].view(image_size, image_size), cmap = 'gray')
-        ax.set_title(labels[idx].numpy())
+        label = labels[idx].item()
+        ax.set_title(label)
     #end
     fig.suptitle(title, fontsize = 14)
     plt.show()
@@ -73,32 +76,39 @@ def parameters_histograms(w, dw, a, da, b, db):
     Returns:
         ~ nothing
     """
+    w = w.cpu()
+    dw = dw.cpu()
+    a = a.cpu()
+    da = da.cpu()
+    b = b.cpu()
+    db = db.cpu()
     
-    fig = plt.figure(figsize=(15,7))
+    fig = plt.figure(figsize=(10,6))
     ax = fig.add_subplot(231)
     ax.hist(w.reshape(1, w.shape[0] * w.shape[1]))
-    ax.set_title('Weights')
+    ax.set_title('Weights', fontsize = 11)
     ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     ax = fig.add_subplot(232)
     ax.hist(dw.reshape(1, dw.shape[0] * dw.shape[1]))
-    ax.set_title('Weights variations')
+    ax.set_title('Weights variations', fontsize = 11)
     ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     ax = fig.add_subplot(233)
     ax.hist(a)
-    ax.set_title('Visible bias')
+    ax.set_title('Visible bias', fontsize = 11)
     ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     ax = fig.add_subplot(234)
     ax.hist(da)
-    ax.set_title('Visible bias variations')
+    ax.set_title('Visible bias variations', fontsize = 11)
     ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     ax = fig.add_subplot(235)
     ax.hist(b)
-    ax.set_title('Hidden bias')
+    ax.set_title('Hidden bias', fontsize = 11)
     ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     ax = fig.add_subplot(236)
     ax.hist(db)
-    ax.set_title('Hidden bias variations')
+    ax.set_title('Hidden bias variations', fontsize = 11)
     ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    plt.subplots_adjust(hspace=0.25)
     plt.show()
     plt.close('all')
 #end
@@ -117,12 +127,13 @@ def receptive_fields_visualization(W):
     Returns:
         ~ nothing
     """
+    W = W.cpu()
     
     hidden_dim = int(np.sqrt(W.shape[1]))
-    side_dim = 5
+    side_dim = 10
     indices = [np.random.randint(0,W.shape[0]) for _ in range(side_dim**2)]
     
-    fig = plt.figure(figsize=(7.5,7.5))
+    fig = plt.figure(figsize=(10,10))
     for i in range(len(indices)):
         ax = fig.add_subplot(side_dim, side_dim, i+1, xticks = [], yticks = [])
         ax.imshow(W[i,:].view(hidden_dim, hidden_dim),cmap = 'gray')
@@ -132,7 +143,8 @@ def receptive_fields_visualization(W):
     plt.show()
     plt.close('all')    
 #end
-    
+
+
 def recursive_receptive_fields(dbn):
     """
     Once the DBN has been trained, it is possible to compose the receptive fields
@@ -140,7 +152,7 @@ def recursive_receptive_fields(dbn):
     ~ Zorzi, Testolin and Stoianov (2013) Modeling language and cognition with
                                           deep unsupervised learning: a tutorial
                                           overview.
-                                          
+                    
     Input:
         ~ dbn (dbn.DeepBeliefNet) : the trained DBN model. Weights are available
                                     as the modules parameters, where each module
@@ -157,7 +169,7 @@ def recursive_receptive_fields(dbn):
         W = W.t()
         receptive_fields_visualization(W)
     #end
-    
+#end
 
 
 def cost_profile_plot(cost_values):
@@ -175,7 +187,7 @@ def cost_profile_plot(cost_values):
     ax = plt.figure(figsize = (7.5,4.5)).gca()
     cost_values = np.array(cost_values)
     span = np.arange(1,len(cost_values)+1)
-    ax.plot(span,cost_values)
+    ax.plot(span,cost_values, color = 'k', alpha = 0.7)
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.set_xlabel('Epoch')
     ax.set_ylabel('Cost (MSE) value')

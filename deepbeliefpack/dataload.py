@@ -1,4 +1,4 @@
-
+import torch
 from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST
 from torchvision import transforms
@@ -71,10 +71,10 @@ class LoadDataset:
         train_load = DataLoader(train_data, batch_size = self.batch_size, shuffle = False)
         test_load  = DataLoader(test_data,  batch_size = self.batch_size, shuffle = False)
         
-        data_iterator = iter(train_load)
+        data_iterator  = iter(train_load)
         Xtrain, Ytrain = self.iter_to_list(list(data_iterator))
         
-        data_iterator = iter(test_load)
+        data_iterator  = iter(test_load)
         Xtest, Ytest   = self.iter_to_list(list(data_iterator))
         
         if binarize:
@@ -85,6 +85,50 @@ class LoadDataset:
         return Xtrain,Ytrain, Xtest,Ytest
     #end
     
+    
+    def yield_tensor_data(self):
+        
+        transfs = transforms.Compose(self.transforms)
+        
+        train_data = MNIST(r'data/', download = True, train = True,  transform = transfs)
+        test_data  = MNIST(r'data/', download = True, train = False, transform = transfs)
+        
+        train_load = DataLoader(train_data, batch_size = self.batch_size, shuffle = False)
+        test_load  = DataLoader(test_data,  batch_size = self.batch_size, shuffle = False)
+        
+        train_iterator = iter(train_load)
+        test_iterator  = iter(test_load)
+        
+        Xtrain = torch.Tensor()
+        Xtest  = torch.Tensor()
+        Ytrain = torch.LongTensor()
+        Ytest  = torch.LongTensor()
+        
+        for data, labels in train_iterator:
+            Xtrain = torch.cat([Xtrain, data], 0)
+            Ytrain = torch.cat([Ytrain, labels], 0)
+        #end
+        
+        Xtrain = Xtrain.view(-1,28*28)  # view(-1,28,28)
+        size_dataset = int(Xtrain.shape[0] / self.batch_size)
+        Xtrain = Xtrain.view(size_dataset, self.batch_size, 28*28)
+        Ytrain = Ytrain.view(size_dataset, self.batch_size, 1)
+        
+        for data, labels in test_iterator:
+            Xtest  = torch.cat([Xtest, data], 0)
+            Ytest  = torch.cat([Ytest, labels], 0)
+        #end
+        
+        Xtest = Xtest.view(-1,28*28)  # view(-1,28,28)
+        size_dataset = int(Xtest.shape[0] / self.batch_size)
+        Xtest = Xtest.view(size_dataset, self.batch_size, 28*28)
+        Ytest = Ytest.view(size_dataset, self.batch_size, 1)
+        
+        Xtrain = Xtrain.cuda()
+        Xtest  = Xtest.cuda()
+        
+        return Xtrain, Xtest, Ytrain, Ytest
+    #end
     
     @staticmethod
     def iter_to_list(data_set):
@@ -102,7 +146,7 @@ class LoadDataset:
                                               samples in the data batches in data
         """
         
-        data = []
+        data   = []
         labels = []
         
         for _data,_labels in data_set:
